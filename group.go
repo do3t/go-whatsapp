@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Rhymen/go-whatsapp/binary"
+	"github.com/do3t/go-whatsapp/binary"
 )
 
 const (

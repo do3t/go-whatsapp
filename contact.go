@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Rhymen/go-whatsapp/binary"
+	"github.com/do3t/go-whatsapp/binary"
 )
 
 type Presence string
