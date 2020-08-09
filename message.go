@@ -105,6 +105,94 @@ func (wac *Conn) sendProto(p *proto.WebMessageInfo) (<-chan string, error) {
 	return wac.writeBinary(n, message, ignore, p.Key.GetId())
 }
 
+func (wac *Conn) ForwardMessage(msg interface{}) (string, error) {
+	switch m := msg.(type) {
+	//case *proto.WebMessageInfo:
+	case TextMessage:
+		msgForwardingScore := m.ContextInfo.ForwardingScore
+		if !m.Info.FromMe {
+			msgForwardingScore += 1
+		}
+		if msgForwardingScore > 0 {
+			m.ContextInfo.ForwardingScore = msgForwardingScore
+			m.ContextInfo.IsForwarded = true
+		}
+		return wac.Send(m)
+	case ImageMessage:
+		msgForwardingScore := m.ContextInfo.ForwardingScore
+		if !m.Info.FromMe {
+			msgForwardingScore += 1
+		}
+		if msgForwardingScore > 0 {
+			m.ContextInfo.ForwardingScore = msgForwardingScore
+			m.ContextInfo.IsForwarded = true
+		}
+		return wac.Send(m)
+	case VideoMessage:
+		msgForwardingScore := m.ContextInfo.ForwardingScore
+		if !m.Info.FromMe {
+			msgForwardingScore += 1
+		}
+		if msgForwardingScore > 0 {
+			m.ContextInfo.ForwardingScore = msgForwardingScore
+			m.ContextInfo.IsForwarded = true
+		}
+		return wac.Send(m)
+	case DocumentMessage:
+		msgForwardingScore := m.ContextInfo.ForwardingScore
+		if !m.Info.FromMe {
+			msgForwardingScore += 1
+		}
+		if msgForwardingScore > 0 {
+			m.ContextInfo.ForwardingScore = msgForwardingScore
+			m.ContextInfo.IsForwarded = true
+		}
+		return wac.Send(m)
+	case AudioMessage:
+		msgForwardingScore := m.ContextInfo.ForwardingScore
+		if !m.Info.FromMe {
+			msgForwardingScore += 1
+		}
+		if msgForwardingScore > 0 {
+			m.ContextInfo.ForwardingScore = msgForwardingScore
+			m.ContextInfo.IsForwarded = true
+		}
+		return wac.Send(m)
+	case LocationMessage:
+		msgForwardingScore := m.ContextInfo.ForwardingScore
+		if !m.Info.FromMe {
+			msgForwardingScore += 1
+		}
+		if msgForwardingScore > 0 {
+			m.ContextInfo.ForwardingScore = msgForwardingScore
+			m.ContextInfo.IsForwarded = true
+		}
+		return wac.Send(m)
+	case LiveLocationMessage:
+		msgForwardingScore := m.ContextInfo.ForwardingScore
+		if !m.Info.FromMe {
+			msgForwardingScore += 1
+		}
+		if msgForwardingScore > 0 {
+			m.ContextInfo.ForwardingScore = msgForwardingScore
+			m.ContextInfo.IsForwarded = true
+		}
+		return wac.Send(m)
+	case ContactMessage:
+		msgForwardingScore := m.ContextInfo.ForwardingScore
+		if !m.Info.FromMe {
+			msgForwardingScore += 1
+		}
+		if msgForwardingScore > 0 {
+			m.ContextInfo.ForwardingScore = msgForwardingScore
+			m.ContextInfo.IsForwarded = true
+		}
+		return wac.Send(m)
+	default:
+		return "ERROR", fmt.Errorf("cannot match type %T, use message types declared in the package", msg)
+	}
+}
+
 // RevokeMessage revokes a message (marks as "message removed") for everyone
 func (wac *Conn) RevokeMessage(remotejid, msgid string, fromme bool) (revokeid string, err error) {
 	// create a revocation ID (required)
@@ -278,6 +366,7 @@ type ContextInfo struct {
 	QuotedMessageID string //StanzaId
 	QuotedMessage   *proto.Message
 	Participant     string
+	ForwardingScore uint32
 	IsForwarded     bool
 }
 
@@ -287,21 +376,26 @@ func getMessageContext(msg *proto.ContextInfo) ContextInfo {
 		QuotedMessageID: msg.GetStanzaId(), //StanzaId
 		QuotedMessage:   msg.GetQuotedMessage(),
 		Participant:     msg.GetParticipant(),
+		ForwardingScore: msg.GetForwardingScore(),
 		IsForwarded:     msg.GetIsForwarded(),
 	}
 }
 
 func getContextInfoProto(context *ContextInfo) *proto.ContextInfo {
-	if len(context.QuotedMessageID) > 0 {
-		contextInfo := &proto.ContextInfo{
-			StanzaId: &context.QuotedMessageID,
-		}
+	if (context.IsForwarded && context.ForwardingScore > 0) || len(context.QuotedMessageID) > 0 {
+		contextInfo := &proto.ContextInfo{}
 
-		if &context.QuotedMessage != nil {
+		if &context.QuotedMessage != nil && &context.QuotedMessageID != nil {
+			contextInfo.StanzaId = &context.QuotedMessageID
 			contextInfo.QuotedMessage = context.QuotedMessage
-			contextInfo.Participant = &context.Participant
 		}
 
+		if context.IsForwarded && context.ForwardingScore > 0 {
+			contextInfo.IsForwarded = &context.IsForwarded
+			contextInfo.ForwardingScore = &context.ForwardingScore
+		}
+
+		contextInfo.Participant = &context.Participant
 		return contextInfo
 	}
 
@@ -844,13 +938,12 @@ func ParseProtoMessage(msg *proto.WebMessageInfo) interface{} {
 	return nil
 }
 
-
 /*
 BatteryMessage represents a battery level and charging state.
 */
 type BatteryMessage struct {
-	Plugged bool
-	Powersave bool
+	Plugged    bool
+	Powersave  bool
 	Percentage int
 }
 
@@ -859,14 +952,13 @@ func getBatteryMessage(msg map[string]string) BatteryMessage {
 	powersave, _ := strconv.ParseBool(msg["powersave"])
 	percentage, _ := strconv.Atoi(msg["value"])
 	batteryMessage := BatteryMessage{
-		Plugged: plugged,
-		Powersave: powersave,
+		Plugged:    plugged,
+		Powersave:  powersave,
 		Percentage: percentage,
 	}
 
 	return batteryMessage
 }
-
 
 func ParseNodeMessage(msg binary.Node) interface{} {
 	switch msg.Description {
