@@ -65,6 +65,8 @@ func (wac *Conn) Send(msg interface{}) (string, error) {
 		msgProto = GetLiveLocationProto(m)
 	case ContactMessage:
 		msgProto = getContactMessageProto(m)
+	case LinkMessage:
+		msgProto = getLinkMessageProto(m)
 	default:
 		return "ERROR", fmt.Errorf("cannot match type %T, use message types declared in the package", msg)
 	}
@@ -893,6 +895,29 @@ func getContactMessageProto(msg ContactMessage) *proto.WebMessageInfo {
 		},
 	}
 
+	return p
+}
+
+/*
+LinkMessage represents a link message.
+*/
+type LinkMessage struct {
+	Info          MessageInfo
+	Title         string
+	Text          string
+	URL           string
+	JpegThumbnail []byte
+}
+
+func getLinkMessageProto(msg LinkMessage) *proto.WebMessageInfo {
+	p := getInfoProto(&msg.Info)
+	p.Message = &proto.Message{}
+	p.Message.ExtendedTextMessage = &proto.ExtendedTextMessage{
+		Title:         &msg.Title,
+		Text:          &msg.Text,
+		MatchedText:   &msg.URL,
+		JpegThumbnail: msg.JpegThumbnail,
+	}
 	return p
 }
 
