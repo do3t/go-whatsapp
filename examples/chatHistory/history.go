@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/do3t/go-whatsapp"
 	"log"
 	"time"
+
+	"github.com/do3t/go-whatsapp"
 )
 
 // historyHandler for acquiring chat history
